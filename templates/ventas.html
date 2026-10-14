@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Historial de Ventas - El Buen Mordisco{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="fw-bold text-dark m-0">Historial de Ventas y Facturación</h3>
+            <p class="text-muted small m-0">Registro contable de todas las transacciones realizadas.</p>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Métricas -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-success text-white">
+                <div class="card-body">
+                    <span class="small text-uppercase opacity-75 fw-bold">Recaudación Total</span>
+                    <h2 class="fw-bold mt-1 m-0">${{ "%.2f"|format(total_recaudado) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-primary text-white">
+                <div class="card-body">
+                    <span class="small text-uppercase opacity-75 fw-bold">Total de Tickets Emitidos</span>
+                    <h2 class="fw-bold mt-1 m-0">{{ ventas|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-dark text-white">
+                <div class="card-body">
+                    <span class="small text-uppercase opacity-75 fw-bold">Ticket Promedio</span>
+                    {% set ticket_promedio = (total_recaudado / ventas|length) if ventas|length > 0 else 0 %}
+                    <h2 class="fw-bold mt-1 m-0">${{ "%.2f"|format(ticket_promedio) }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Ventas -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-3">Comprobante</th>
+                            <th>Fecha</th>
+                            <th>Pedido Asoc.</th>
+                            <th>Cliente</th>
+                            <th>Registrado por</th>
+                            <th>Método de Pago</th>
+                            <th class="text-end pe-3">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for venta in ventas %}
+                        <tr>
+                            <td class="ps-3 fw-bold text-dark">
+                                {{ venta.comprobante }}
+                            </td>
+                            <td class="small text-muted">{{ venta.fecha or '-' }}</td>
+                            <td><span class="badge bg-secondary">Pedido #{{ venta.id_pedido }}</span></td>
+                            <td>{{ venta.cliente_nombre }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ venta.usuario_nombre }}</span></td>
+                            <td><span class="badge bg-info-subtle text-info-emphasis border">{{ venta.metodo_pago }}</span></td>
+                            <td class="text-end pe-3 fw-bold text-success fs-6">${{ "%.2f"|format(venta.total) }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">Aún no se han registrado ventas.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

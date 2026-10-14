@@ -1,0 +1,85 @@
+/* Estilos generales para El Buen Mordisco */
+:root {
+    --brand-primary: #e63946;
+    --brand-warning: #ffb703;
+    --brand-dark: #1d3557;
+    --brand-light: #f8f9fa;
+    --brand-success: #2a9d8f;
+}
+
+body {
+    background-color: #f4f6f9;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.navbar-brand {
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    font-size: 1.4rem;
+}
+
+.badge-counter {
+    position: relative;
+    top: -1px;
+}
+
+/* Tarjetas de productos en el Punto de Venta */
+.product-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12) !important;
+}
+
+.product-price {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--brand-primary);
+}
+
+/* Carrito lateral */
+.cart-panel {
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+    position: sticky;
+    top: 20px;
+}
+
+.cart-items-list {
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+/* Comandera de Cocina */
+.order-card {
+    border-left: 6px solid #6c757d;
+    border-radius: 10px;
+    transition: all 0.2s ease-in-out;
+}
+
+.order-card.pendiente {
+    border-left-color: var(--brand-warning);
+}
+
+.order-card.preparacion {
+    border-left-color: #0288d1;
+}
+
+.order-card.listo {
+    border-left-color: var(--brand-success);
+}
+
+.footer {
+    margin-top: auto;
+    background: #ffffff;
+    border-top: 1px solid #e9ecef;
+}

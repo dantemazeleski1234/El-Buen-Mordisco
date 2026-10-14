@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+
+{% block title %}Punto de Venta - El Buen Mordisco{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <div class="row">
+        <!-- CatÃ¡logo de Productos (Izquierda) -->
+        <div class="col-lg-8 mb-4">
+            <!-- Filtro de CategorÃ­as -->
+            <div class="d-flex gap-2 mb-3 overflow-auto pb-2">
+                <button class="btn btn-warning fw-semibold category-filter active" onclick="filtrarCategoria('todas')">
+                    Todas
+                </button>
+                <button class="btn btn-outline-dark fw-semibold category-filter" onclick="filtrarCategoria('Hamburguesas')">
+                    Hamburguesas
+                </button>
+                <button class="btn btn-outline-dark fw-semibold category-filter" onclick="filtrarCategoria('Papas')">
+                    Acompañamiento
+                </button>
+                <button class="btn btn-outline-dark fw-semibold category-filter" onclick="filtrarCategoria('Bebidas')">
+                    Bebidas
+                </button>
+                <button class="btn btn-outline-dark fw-semibold category-filter" onclick="filtrarCategoria('Postres')">
+                    Postres
+                </button>
+            </div>
+
+            <!-- Grid de Tarjetas de Productos -->
+            <div class="row row-cols-1 row-cols-md-3 g-3" id="productos-grid">
+                {% for producto in productos %}
+                <div class="col item-producto" data-categoria="{{ producto.categoria }}">
+                    <div class="card h-100 product-card shadow-sm">
+                        <div class="card-body d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge bg-secondary text-uppercase small">{{ producto.categoria }}</span>
+                                    {% set stock_actual = producto.stock_cantidad %}
+                                    <span class="badge {% if stock_actual > 5 %}bg-success-subtle text-success border border-success{% else %}bg-danger-subtle text-danger border border-danger{% endif %}">
+                                        Stock: {{ stock_actual }}
+                                    </span>
+                                </div>
+                                <h5 class="card-title fw-bold text-dark mb-1">{{ producto.nombre }}</h5>
+                                <p class="card-text text-muted small">{{ producto.descripcion or 'Sin descripcion' }}</p>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                                <span class="product-price">${{ "%.2f"|format(producto.precio) }}</span>
+                                <button class="btn btn-sm btn-danger fw-semibold px-3" 
+                                    onclick="agregarAlCarrito({{ producto.id_producto }}, '{{ producto.nombre|replace("'", "\\'") }}', {{ producto.precio }}, {{ stock_actual }})">
+                                    Agregar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        No hay productos registrados en el menu.
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Panel del Pedido Actual / Carrito (Derecha) -->
+        <div class="col-lg-4">
+            <div class="cart-panel p-3 border shadow-sm">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                    <h5 class="fw-bold m-0 text-dark">
+                        Pedido Actual
+                    </h5>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="vaciarCarrito()">
+                        Vaciar
+                    </button>
+                </div>
+
+                <!-- Lista de articulos en el carrito -->
+                <div class="cart-items-list mb-3" id="lista-carrito">
+                    <div class="text-center text-muted py-5" id="carrito-vacio">
+                        <i class="fa-solid fa-basket-shopping fa-3x mb-2 text-secondary opacity-50"></i>
+                        <p class="m-0">No agregaste productos al pedido.</p>
+                    </div>
+                </div>
+
+                <!-- Resumen de Totales -->
+                <div class="bg-light p-3 rounded mb-3 border">
+                    <div class="d-flex justify-content-between mb-1 text-muted small">
+                        <span>Cant. de articulos:</span>
+                        <strong id="total-items">0</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                        <span class="fs-5 fw-bold text-dark">TOTAL:</span>
+                        <span class="fs-4 fw-bold text-danger" id="total-precio">$0.00</span>
+                    </div>
+                </div>
+
+                <!-- Formulario de Confirmacion -->
+                <form action="{{ url_for('crear_pedido') }}" method="POST" id="form-pedido" onsubmit="return validarPedido(event)">
+                    <!-- Datos ocultos para enviar Ã­tems en formato JSON -->
+                    <input type="hidden" name="items_json" id="items_json" value="[]">
+
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Nombre del Cliente *</label>
+                        <input type="text" name="cliente_nombre" id="cliente_nombre" class="form-control form-control-sm" required>
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Telefono (Opcional)</label>
+                            <input type="text" name="cliente_telefono" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Metodo de Pago *</label>
+                            <select name="metodo_pago" class="form-select form-select-sm" required>
+                                <option value="Efectivo" selected>Efectivo</option>
+                                <option value="Tarjeta">Tarjeta Debito/Credito</option>
+                                <option value="MercadoPago">Mercado Pago / QR</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-warning w-100 fw-bold py-2 mt-2 shadow-sm text-dark fs-6" id="btn-confirmar" disabled>
+                        Confirmar y Enviar a Cocina
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let carrito = [];
+
+    function filtrarCategoria(categoria) {
+        document.querySelectorAll('.category-filter').forEach(btn => {
+            btn.classList.remove('active', 'btn-warning');
+            btn.classList.add('btn-outline-dark');
+        });
+        event.currentTarget.classList.add('active', 'btn-warning');
+        event.currentTarget.classList.remove('btn-outline-dark');
+
+        const productos = document.querySelectorAll('.item-producto');
+        productos.forEach(prod => {
+            if (categoria === 'todas' || prod.dataset.categoria === categoria) {
+                prod.style.display = 'block';
+            } else {
+                prod.style.display = 'none';
+            }
+        });
+    }
+
+    function agregarAlCarrito(id, nombre, precio, stockMax) {
+        const itemExistente = carrito.find(i => i.id === id);
+        if (itemExistente) {
+            itemExistente.cantidad++;
+        } else {
+            carrito.push({
+                id: id,
+                nombre: nombre,
+                precio: parseFloat(precio),
+                cantidad: 1
+            });
+        }
+        actualizarVistaCarrito();
+    }
+
+    function cambiarCantidad(id, delta) {
+        const item = carrito.find(i => i.id === id);
+        if (!item) return;
+
+        item.cantidad += delta;
+        if (item.cantidad <= 0) {
+            carrito = carrito.filter(i => i.id !== id);
+        }
+        actualizarVistaCarrito();
+    }
+
+    function vaciarCarrito() {
+        carrito = [];
+        actualizarVistaCarrito();
+    }
+
+    function actualizarVistaCarrito() {
+        const contenedor = document.getElementById('lista-carrito');
+        const totalItemsEl = document.getElementById('total-items');
+        const totalPrecioEl = document.getElementById('total-precio');
+        const inputHidden = document.getElementById('items_json');
+        const btnConfirmar = document.getElementById('btn-confirmar');
+
+        if (carrito.length === 0) {
+            contenedor.innerHTML = `
+                <div class="text-center text-muted py-5" id="carrito-vacio">
+                    <i class="fa-solid fa-basket-shopping fa-3x mb-2 text-secondary opacity-50"></i>
+                    <p class="m-0">AÃºn no agregaste productos al pedido.</p>
+                </div>
+            `;
+            totalItemsEl.innerText = '0';
+            totalPrecioEl.innerText = '$0.00';
+            inputHidden.value = '[]';
+            btnConfirmar.disabled = true;
+            return;
+        }
+
+        let html = '';
+        let totalItems = 0;
+        let totalPrecio = 0;
+
+        carrito.forEach(item => {
+            const subtotal = item.precio * item.cantidad;
+            totalItems += item.cantidad;
+            totalPrecio += subtotal;
+
+            html += `
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <div style="max-width: 55%;">
+                        <strong class="d-block text-truncate small">${item.nombre}</strong>
+                        <span class="text-muted small">$${item.precio.toFixed(2)} c/u</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-secondary py-0 px-2" onclick="cambiarCantidad(${item.id}, -1)">-</button>
+                            <span class="btn btn-light py-0 px-2 fw-bold disabled text-dark">${item.cantidad}</span>
+                            <button type="button" class="btn btn-outline-secondary py-0 px-2" onclick="cambiarCantidad(${item.id}, 1)">+</button>
+                        </div>
+                        <span class="fw-bold small text-danger text-end" style="min-width: 60px;">$${subtotal.toFixed(2)}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        contenedor.innerHTML = html;
+        totalItemsEl.innerText = totalItems;
+        totalPrecioEl.innerText = '$' + totalPrecio.toFixed(2);
+        inputHidden.value = JSON.stringify(carrito);
+        btnConfirmar.disabled = false;
+    }
+
+    function validarPedido(e) {
+        if (carrito.length === 0) {
+            alert('Debes agregar al menos un producto al pedido.');
+            e.preventDefault();
+            return false;
+        }
+        return true;
+    }
+</script>
+{% endblock %}

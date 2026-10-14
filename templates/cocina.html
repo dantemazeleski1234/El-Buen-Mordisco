@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Cocina y Comandas - El Buen Mordisco{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="fw-bold text-dark m-0">Comandera de Cocina</h3>
+            <p class="text-muted small m-0">Monitorea y actualiza el estado de los pedidos en tiempo real.</p>
+        </div>
+        <button class="btn btn-outline-dark btn-sm fw-semibold" onclick="window.location.reload();">
+            Actualizar Pantalla
+        </button>
+    </div>
+
+    <!-- Columnas por Estado -->
+    <div class="row g-3">
+        <!-- 1. PENDIENTES -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-header bg-warning text-dark fw-bold d-flex justify-content-between align-items-center">
+                    <span>PENDIENTES</span>
+                    <span class="badge bg-dark rounded-pill">{{ pedidos_pendientes|length }}</span>
+                </div>
+                <div class="card-body p-2" style="min-height: 500px; max-height: 75vh; overflow-y: auto;">
+                    {% for pedido in pedidos_pendientes %}
+                    <div class="card order-card pendiente mb-2 shadow-sm">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                                <span class="fw-bold text-dark fs-5">#{{ pedido.id_pedido }}</span>
+                                <span class="badge bg-secondary">{{ pedido.hora[:5] if pedido.hora else '' }}</span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="text-muted small">Cliente:</span>
+                                <strong class="d-block text-dark">{{ pedido.cliente_nombre }}</strong>
+                            </div>
+                            
+                            <!-- Lista de Ítems a preparar -->
+                            <div class="bg-light p-2 rounded mb-3 border">
+                                <ul class="list-unstyled m-0 small">
+                                    {% for detalle in pedido.detalles %}
+                                    <li class="d-flex justify-content-between py-1 border-bottom border-light-subtle">
+                                        <span class="fw-bold text-dark">{{ detalle.cantidad }}x {{ detalle.producto_nombre }}</span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+
+                            <a href="{{ url_for('cambiar_estado', id_pedido=pedido.id_pedido, nuevo_estado='En Preparación') }}" 
+                               class="btn btn-primary btn-sm w-100 fw-semibold">
+                                Empezar a Preparar
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted py-4 small">No hay pedidos pendientes.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. EN PREPARACIÓN -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-header bg-info text-white fw-bold d-flex justify-content-between align-items-center">
+                    <span>EN PREPARACIÓN</span>
+                    <span class="badge bg-dark rounded-pill">{{ pedidos_preparacion|length }}</span>
+                </div>
+                <div class="card-body p-2" style="min-height: 500px; max-height: 75vh; overflow-y: auto;">
+                    {% for pedido in pedidos_preparacion %}
+                    <div class="card order-card preparacion mb-2 shadow-sm">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                                <span class="fw-bold text-dark fs-5">#{{ pedido.id_pedido }}</span>
+                                <span class="badge bg-secondary">{{ pedido.hora[:5] if pedido.hora else '' }}</span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="text-muted small">Cliente:</span>
+                                <strong class="d-block text-dark">{{ pedido.cliente_nombre }}</strong>
+                            </div>
+
+                            <div class="bg-light p-2 rounded mb-3 border">
+                                <ul class="list-unstyled m-0 small">
+                                    {% for detalle in pedido.detalles %}
+                                    <li class="d-flex justify-content-between py-1 border-bottom border-light-subtle">
+                                        <span class="fw-bold text-dark">{{ detalle.cantidad }}x {{ detalle.producto_nombre }}</span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+
+                            <a href="{{ url_for('cambiar_estado', id_pedido=pedido.id_pedido, nuevo_estado='Listo') }}" 
+                               class="btn btn-success btn-sm w-100 fw-semibold">
+                                Marcar como Listo
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted py-4 small">Nada en preparación actualmente.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. LISTOS PARA ENTREGAR -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-header bg-success text-white fw-bold d-flex justify-content-between align-items-center">
+                    <span>LISTOS PARA ENTREGAR</span>
+                    <span class="badge bg-dark rounded-pill">{{ pedidos_listos|length }}</span>
+                </div>
+                <div class="card-body p-2" style="min-height: 500px; max-height: 75vh; overflow-y: auto;">
+                    {% for pedido in pedidos_listos %}
+                    <div class="card order-card listo mb-2 shadow-sm">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                                <span class="fw-bold text-dark fs-5">#{{ pedido.id_pedido }}</span>
+                                <span class="badge bg-success">Listo</span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="text-muted small">Cliente:</span>
+                                <strong class="d-block text-dark">{{ pedido.cliente_nombre }}</strong>
+                            </div>
+
+                            <div class="bg-light p-2 rounded mb-3 border">
+                                <ul class="list-unstyled m-0 small">
+                                    {% for detalle in pedido.detalles %}
+                                    <li class="d-flex justify-content-between py-1">
+                                        <span class="fw-semibold text-dark">{{ detalle.cantidad }}x {{ detalle.producto_nombre }}</span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+
+                            <a href="{{ url_for('cambiar_estado', id_pedido=pedido.id_pedido, nuevo_estado='Entregado') }}" 
+                               class="btn btn-outline-secondary btn-sm w-100 fw-semibold">
+                                Entregar al Cliente
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted py-4 small">No hay pedidos esperando entrega.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

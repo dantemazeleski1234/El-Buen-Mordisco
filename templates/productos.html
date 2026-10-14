@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}Productos y Stock - El Buen Mordisco{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="fw-bold text-dark m-0">Gestion de Productos & Stock</h3>
+            <p class="text-muted small m-0">Administra los precios, categorias y disponibilidad de los productos.</p>
+        </div>
+        <button class="btn btn-danger fw-semibold" data-bs-toggle="modal" data-bs-target="#modalNuevoProducto">
+            Nuevo Producto
+        </button>
+    </div>
+
+    <!-- Tabla de Productos -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-3">ID</th>
+                            <th>Producto</th>
+                            <th>Categori­a</th>
+                            <th>Proveedor</th>
+                            <th>Precio</th>
+                            <th>Stock Disponible</th>
+                            <th>Estado</th>
+                            <th class="text-end pe-3">Acciones</th>
+                        </tr>
+                        
+                    </thead>
+                    <tbody>
+                        {% for prod in productos %}
+                        {% set stock_actual = prod.stock_cantidad %}
+                        <tr>
+                            <td class="ps-3 fw-bold text-secondary">#{{ prod.id_producto }}</td>
+                            <td>
+                                <strong class="text-dark d-block">{{ prod.nombre }}</strong>
+                                <span class="text-muted small">{{ prod.descripcion or '-' }}</span>
+                            </td>
+                            <td><span class="badge bg-secondary">{{ prod.categoria }}</span></td>
+                            <td><span class="small text-muted">{{ prod.proveedor_nombre }}</span></td>
+                            <td class="fw-bold text-danger">${{ "%.2f"|format(prod.precio) }}</td>
+                            <td class="fw-bold align-middle">
+                                {{ stock_actual }} un.
+                            </td>
+                            <td>
+                                {% if prod.disponible and stock_actual > 0 %}
+                                    <span class="badge bg-success-subtle text-success border border-success">Disponible</span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger">Agotado</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-3">
+                                <div class="d-flex justify-content-end gap-1">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditar{{ prod.id_producto }}" title="Editar Producto">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <a href="{{ url_for('toggle_disponible', id_producto=prod.id_producto) }}" 
+                                       class="btn btn-sm {% if prod.disponible %}btn-outline-warning{% else %}btn-outline-success{% endif %}" 
+                                       title="Cambiar visibilidad">
+                                        <i class="fa-solid {% if prod.disponible %}fa-eye-slash{% else %}fa-eye{% endif %}"></i>
+                                    </a>
+                                    
+                                    <form action="{{ url_for('eliminar_producto', id_producto=prod.id_producto) }}" method="POST" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar Producto">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- Modal Editar Producto -->
+                        <div class="modal fade text-start" id="modalEditar{{ prod.id_producto }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form action="{{ url_for('editar_producto', id_producto=prod.id_producto) }}" method="POST">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title fw-bold">Editar Producto: {{ prod.nombre }}</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Nombre del Producto *</label>
+                                                <input type="text" name="nombre" class="form-control" value="{{ prod.nombre }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Descripción (Título)</label>
+                                                <textarea name="descripcion" class="form-control" rows="2">{{ prod.descripcion }}</textarea>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-6 mb-3">
+                                                    <label class="form-label small fw-semibold">Precio ($) *</label>
+                                                    <input type="number" step="0.01" name="precio" class="form-control" value="{{ prod.precio }}" required>
+                                                </div>
+                                                <div class="col-6 mb-3">
+                                                    <label class="form-label small fw-semibold">Cantidad (Stock) *</label>
+                                                    <input type="number" name="cantidad" class="form-control" value="{{ stock_actual }}" required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer bg-light">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-primary fw-bold">Guardar Cambios</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Crear Nuevo Producto -->
+<div class="modal fade" id="modalNuevoProducto" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('crear_producto') }}" method="POST">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold">Agregar Producto</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Nombre del Producto *</label>
+                        <input type="text" name="nombre" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">descripcion</label>
+                        <textarea name="descripcion" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Categoria *</label>
+                            <select name="categoria" class="form-select" required>
+                                <option value="Hamburguesas" selected>Hamburguesas</option>
+                                <option value="Papas">Papas / Acompañamientos</option>
+                                <option value="Bebidas">Bebidas</option>
+                                <option value="Postres">Postres</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Precio ($) *</label>
+                            <input type="number" step="0.01" name="precio" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Stock Inicial</label>
+                        <input type="number" name="stock_inicial" class="form-control" value="20" min="0" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning fw-bold text-dark">Guardar Producto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
